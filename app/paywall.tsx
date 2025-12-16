@@ -93,7 +93,7 @@ export default function Paywall() {
       <View style={styles.pricingCard}>
         <View style={styles.priceHeader}>
           <Text style={styles.currency}>$</Text>
-          <Text style={styles.price}>9.99</Text>
+          <Text style={styles.price}>0.99</Text>
           <Text style={styles.period}>/month</Text>
         </View>
         <Text style={styles.billingInfo}>Cancel anytime</Text>
