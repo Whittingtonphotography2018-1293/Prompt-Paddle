@@ -2,19 +2,26 @@ import { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/Colors';
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
+    if (authLoading || subscriptionLoading) return;
 
-    const checkOnboarding = async () => {
+    const checkAccess = async () => {
       if (!user) {
         router.replace('/onboarding/welcome');
+        return;
+      }
+
+      if (!hasActiveSubscription) {
+        router.replace('/paywall');
         return;
       }
 
@@ -31,8 +38,8 @@ export default function Index() {
       }
     };
 
-    checkOnboarding();
-  }, [user, loading]);
+    checkAccess();
+  }, [user, authLoading, hasActiveSubscription, subscriptionLoading]);
 
   return (
     <View style={styles.container}>
