@@ -27,23 +27,45 @@ export function useSubscription() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('stripe_user_subscriptions')
-        .select('subscription_status')
+      const { data: customerData, error: customerError } = await supabase
+        .from('stripe_customers')
+        .select('customer_id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error checking subscription:', error);
+      if (customerError) {
+        console.error('Error checking customer:', customerError);
         setSubscriptionStatus('not_started');
         setLoading(false);
         return;
       }
 
-      if (!data || !data.subscription_status) {
+      if (!customerData || !customerData.customer_id) {
         setSubscriptionStatus('not_started');
-      } else if (data.subscription_status === 'active' || data.subscription_status === 'trialing') {
-        setSubscriptionStatus(data.subscription_status);
-      } else if (data.subscription_status === 'past_due') {
+        setLoading(false);
+        return;
+      }
+
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('stripe_subscriptions')
+        .select('status')
+        .eq('customer_id', customerData.customer_id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error('Error checking subscription:', subscriptionError);
+        setSubscriptionStatus('not_started');
+        setLoading(false);
+        return;
+      }
+
+      if (!subscriptionData || !subscriptionData.status) {
+        setSubscriptionStatus('not_started');
+      } else if (subscriptionData.status === 'active' || subscriptionData.status === 'trialing') {
+        setSubscriptionStatus(subscriptionData.status);
+      } else if (subscriptionData.status === 'past_due') {
         setSubscriptionStatus('past_due');
       } else {
         setSubscriptionStatus('inactive');
