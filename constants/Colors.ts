@@ -20,6 +20,7 @@ export const Colors = {
   surfaceGray: '#F0F0EB',
 
   text: '#2D3436',
+  textSecondary: '#636E72',
   textLight: '#636E72',
   textLighter: '#B2BEC3',
 

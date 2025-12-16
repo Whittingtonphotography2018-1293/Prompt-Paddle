@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,19 +17,22 @@ import Input from '@/components/Input';
 import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
+import { checkPasswordCompromised, validatePasswordStrength } from '@/utils/passwordSecurity';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingPassword, setCheckingPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordWarnings, setPasswordWarnings] = useState<string[]>([]);
 
   const { signUp } = useAuth();
   const router = useRouter();
 
-  const validate = () => {
+  const validate = async () => {
     const newErrors: Record<string, string> = {};
 
     if (!email) {
@@ -39,8 +43,11 @@ export default function SignUp() {
 
     if (!password) {
       newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else {
+      const strengthCheck = validatePasswordStrength(password);
+      if (!strengthCheck.isValid) {
+        newErrors.password = strengthCheck.errors[0];
+      }
     }
 
     if (password !== confirmPassword) {
@@ -48,11 +55,27 @@ export default function SignUp() {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      return false;
+    }
+
+    setCheckingPassword(true);
+    const isCompromised = await checkPasswordCompromised(password);
+    setCheckingPassword(false);
+
+    if (isCompromised) {
+      newErrors.password = 'This password has been exposed in a data breach. Please choose a different password.';
+      setErrors(newErrors);
+      return false;
+    }
+
+    return true;
   };
 
   const handleSignUp = async () => {
-    if (!validate()) return;
+    const isValid = await validate();
+    if (!isValid) return;
 
     setLoading(true);
     const { error } = await signUp(email, password);
@@ -66,6 +89,14 @@ export default function SignUp() {
     } else {
       router.replace('/onboarding/comfort-assessment');
     }
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    setErrors({ ...errors, password: '' });
+
+    const strengthCheck = validatePasswordStrength(text);
+    setPasswordWarnings(strengthCheck.errors);
   };
 
   return (
@@ -109,15 +140,22 @@ export default function SignUp() {
             <Input
               label="Password"
               value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors({ ...errors, password: '' });
-              }}
-              placeholder="At least 6 characters"
+              onChangeText={handlePasswordChange}
+              placeholder="At least 8 characters with uppercase, lowercase, number, and special character"
               secureTextEntry
               error={errors.password}
               containerStyle={styles.inputSpacing}
             />
+            {passwordWarnings.length > 0 && !errors.password && (
+              <View style={styles.warningContainer}>
+                {passwordWarnings.map((warning, index) => (
+                  <View key={index} style={styles.warningItem}>
+                    <AlertTriangle size={14} color={Colors.warning} />
+                    <Text style={styles.warningText}>{warning}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
 
             <Input
               label="Confirm Password"
@@ -133,9 +171,9 @@ export default function SignUp() {
             />
 
             <Button
-              title="Create Account"
+              title={checkingPassword ? 'Checking Password Security...' : 'Create Account'}
               onPress={handleSignUp}
-              loading={loading}
+              loading={loading || checkingPassword}
               size="large"
               style={styles.submitButton}
             />
@@ -201,5 +239,19 @@ const styles = StyleSheet.create({
   linkText: {
     ...Typography.body,
     color: Colors.primary,
+  },
+  warningContainer: {
+    marginTop: 8,
+    gap: 6,
+  },
+  warningItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  warningText: {
+    ...Typography.caption,
+    color: Colors.warning,
+    flex: 1,
   },
 });
