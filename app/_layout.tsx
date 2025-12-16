@@ -1,12 +1,19 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
   useFrameworkReady();
+
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
