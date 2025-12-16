@@ -73,6 +73,11 @@ You need to create high-resolution versions of your app icon from the existing l
 
 1. **Create a production build**
    ```bash
+   npm run build:ios
+   ```
+
+   Or directly with EAS:
+   ```bash
    eas build --platform ios --profile production
    ```
 
@@ -116,6 +121,11 @@ You need to create high-resolution versions of your app icon from the existing l
 
 ### Option A: Submit via EAS (Recommended)
 
+```bash
+npm run submit:ios
+```
+
+Or directly with EAS:
 ```bash
 eas submit --platform ios --profile production
 ```
@@ -292,10 +302,10 @@ Plan to update your app every 2-3 months:
 ```bash
 # 1. Update version in app.json
 # 2. Build new version
-eas build --platform ios --profile production
+npm run build:ios
 
 # 3. Submit new version
-eas submit --platform ios --profile production
+npm run submit:ios
 
 # 4. Update "What's New" in App Store Connect
 # 5. Submit for review
