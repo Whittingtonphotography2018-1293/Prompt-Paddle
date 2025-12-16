@@ -41,7 +41,6 @@ export default function Paywall() {
     'Access to all app templates',
     'Platform-specific recommendations',
     'Step-by-step tutorials',
-    'Priority support',
     'Regular updates and new features',
   ];
 
