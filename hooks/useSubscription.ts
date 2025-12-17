@@ -27,48 +27,30 @@ export function useSubscription() {
     }
 
     try {
-      const { data: customerData, error: customerError } = await supabase
-        .from('stripe_customers')
-        .select('customer_id')
+      const { data, error } = await supabase
+        .from('revenuecat_entitlements')
+        .select('is_active, expires_at')
         .eq('user_id', user.id)
-        .is('deleted_at', null)
+        .eq('is_active', true)
         .maybeSingle();
 
-      if (customerError) {
-        console.error('Error checking customer:', customerError);
+      if (error) {
+        console.error('Error checking subscription:', error);
         setSubscriptionStatus('not_started');
         setLoading(false);
         return;
       }
 
-      if (!customerData || !customerData.customer_id) {
-        setSubscriptionStatus('not_started');
-        setLoading(false);
-        return;
-      }
-
-      const { data: subscriptionData, error: subscriptionError } = await supabase
-        .from('stripe_subscriptions')
-        .select('status')
-        .eq('customer_id', customerData.customer_id)
-        .is('deleted_at', null)
-        .maybeSingle();
-
-      if (subscriptionError) {
-        console.error('Error checking subscription:', subscriptionError);
-        setSubscriptionStatus('not_started');
-        setLoading(false);
-        return;
-      }
-
-      if (!subscriptionData || !subscriptionData.status) {
-        setSubscriptionStatus('not_started');
-      } else if (subscriptionData.status === 'active' || subscriptionData.status === 'trialing') {
-        setSubscriptionStatus(subscriptionData.status);
-      } else if (subscriptionData.status === 'past_due') {
-        setSubscriptionStatus('past_due');
+      if (data) {
+        if (data.expires_at) {
+          const expiresAt = new Date(data.expires_at);
+          const isStillActive = expiresAt > new Date();
+          setSubscriptionStatus(isStillActive ? 'active' : 'inactive');
+        } else {
+          setSubscriptionStatus('active');
+        }
       } else {
-        setSubscriptionStatus('inactive');
+        setSubscriptionStatus('not_started');
       }
     } catch (err) {
       console.error('Error checking subscription:', err);
