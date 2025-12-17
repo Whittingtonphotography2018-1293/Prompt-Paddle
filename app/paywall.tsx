@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
@@ -39,6 +40,26 @@ export default function Paywall() {
     checkForNewSubscription();
   }, []);
 
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      const url = event.url;
+      if (url.includes('subscription-success')) {
+        await refetchSubscription();
+        if (hasActiveSubscription) {
+          router.replace('/(tabs)');
+        } else {
+          router.push('/subscription-success');
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [hasActiveSubscription]);
+
   const features = [
     'Unlimited AI-powered prompt generation',
     'Access to all app templates',
@@ -62,13 +83,13 @@ export default function Paywall() {
         'price_1Sf28eKgn1iCzvzBqk6NkGRF';
 
       const baseUrl =
-        Platform.OS === 'web' ? window.location.origin : 'https://promptpaddle.app';
+        Platform.OS === 'web' ? window.location.origin : 'promptpaddle://';
 
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
           price_id: priceId,
-          success_url: `${baseUrl}/subscription-success`,
-          cancel_url: `${baseUrl}/paywall`,
+          success_url: `${baseUrl}subscription-success`,
+          cancel_url: `${baseUrl}paywall`,
           mode: 'subscription',
         },
       });
@@ -85,13 +106,13 @@ export default function Paywall() {
         } else {
           const result = await WebBrowser.openBrowserAsync(data.url);
 
-          if (result.type === 'cancel') {
-            Alert.alert('Cancelled', 'Subscription process was cancelled');
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          await refetchSubscription();
+
+          if (hasActiveSubscription) {
+            router.replace('/(tabs)');
           } else {
-            await refetchSubscription();
-            if (hasActiveSubscription) {
-              router.replace('/(tabs)');
-            }
+            router.push('/subscription-success');
           }
         }
       } else {
