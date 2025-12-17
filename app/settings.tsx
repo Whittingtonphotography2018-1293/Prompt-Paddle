@@ -151,9 +151,12 @@ export default function SettingsScreen() {
     setCanceling(true);
 
     try {
+      console.log('Invoking stripe-cancel-subscription function...');
       const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
         body: {},
       });
+
+      console.log('Function response:', { data, error });
 
       if (error) {
         console.error('Cancel subscription error:', error);
@@ -161,8 +164,11 @@ export default function SettingsScreen() {
       }
 
       if (data?.error) {
+        console.error('Function returned error:', data.error);
         throw new Error(data.error);
       }
+
+      console.log('Subscription cancelled successfully:', data);
 
       if (Platform.OS === 'web') {
         window.alert(
