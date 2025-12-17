@@ -222,9 +222,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: Colors.textLighter,
     marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   categoryChipActive: {
     backgroundColor: Colors.primary,
@@ -236,7 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryTextActive: {
-    color: Colors.surface,
+    color: '#FFFFFF',
   },
   content: {
     padding: 24,
