@@ -212,10 +212,14 @@ const styles = StyleSheet.create({
   categoryScroll: {
     flexGrow: 0,
     maxHeight: 50,
+    marginBottom: 16,
+    backgroundColor: Colors.background,
+    zIndex: 10,
   },
   categoryContent: {
     paddingHorizontal: 24,
     paddingVertical: 8,
+    gap: 8,
   },
   categoryChip: {
     paddingHorizontal: 16,
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 24,
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 100,
   },
   templateCard: {
