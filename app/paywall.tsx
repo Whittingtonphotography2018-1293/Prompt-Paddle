@@ -1,38 +1,33 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  Platform,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Check } from 'lucide-react-native';
-import { useRevenueCat } from '@/contexts/RevenueCatContext';
+import { useSubscription } from '@/hooks/useSubscription';
 
-export default function PaywallRevenueCat() {
+export default function PaywallScreen() {
   const [loading, setLoading] = useState(false);
-  const [restoring, setRestoring] = useState(false);
   const router = useRouter();
-  const {
-    hasActiveEntitlement,
-    offerings,
-    purchasePackage,
-    restorePurchases,
-    isConfigured,
-    loading: rcLoading,
-  } = useRevenueCat();
+  const { user } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
 
   useEffect(() => {
-    if (hasActiveEntitlement) {
+    if (hasActiveSubscription) {
       router.replace('/(tabs)');
     }
-  }, [hasActiveEntitlement]);
+  }, [hasActiveSubscription]);
 
   const features = [
     'Unlimited AI-powered prompt generation',
@@ -43,95 +38,49 @@ export default function PaywallRevenueCat() {
   ];
 
   const handleSubscribe = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert(
-        'Not Available',
-        'Subscriptions are only available on iOS and Android devices.'
-      );
-      return;
-    }
-
-    if (!isConfigured) {
-      Alert.alert('Error', 'Payment system is not configured');
-      return;
-    }
-
-    if (!offerings?.current?.availablePackages?.length) {
-      Alert.alert('Error', 'No subscription packages available');
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to subscribe');
       return;
     }
 
     setLoading(true);
 
     try {
-      const monthlyPackage = offerings.current.availablePackages[0];
-      const result = await purchasePackage(monthlyPackage);
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {},
+      });
 
-      if (result.success) {
-        Alert.alert('Success', 'Subscription activated!');
-        router.replace('/(tabs)');
-      } else if (result.error && !result.error.userCancelled) {
-        Alert.alert('Error', 'Failed to complete purchase. Please try again.');
+      if (error) {
+        throw error;
       }
-    } catch (err) {
-      console.error('Error:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+
+      if (data?.url) {
+        if (Platform.OS === 'web') {
+          window.location.href = data.url;
+        } else {
+          Alert.alert(
+            'Redirect to Stripe',
+            'You will be redirected to complete your purchase.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  router.push(data.url);
+                },
+              },
+            ]
+          );
+        }
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      Alert.alert('Error', err.message || 'Failed to start checkout. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const handleRestore = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert(
-        'Not Available',
-        'Restore purchases is only available on iOS and Android devices.'
-      );
-      return;
-    }
-
-    setRestoring(true);
-
-    try {
-      const result = await restorePurchases();
-
-      if (result.success) {
-        if (hasActiveEntitlement) {
-          Alert.alert('Success', 'Purchases restored successfully!');
-          router.replace('/(tabs)');
-        } else {
-          Alert.alert('No Purchases', 'No active subscriptions found.');
-        }
-      } else {
-        Alert.alert('Error', 'Failed to restore purchases. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    } finally {
-      setRestoring(false);
-    }
-  };
-
-  if (rcLoading) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
-  if (Platform.OS === 'web') {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.title}>Subscriptions Not Available</Text>
-        <Text style={[styles.subtitle, { textAlign: 'center', marginTop: 16 }]}>
-          Subscriptions are only available on iOS and Android devices. Please download the mobile
-          app to subscribe.
-        </Text>
-      </View>
-    );
-  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -146,7 +95,7 @@ export default function PaywallRevenueCat() {
         <View style={styles.priceHeader}>
           <Text style={styles.currency}>$</Text>
           <Text style={styles.price}>0.99</Text>
-          <Text style={styles.period}>/month</Text>
+          <Text style={styles.period}>/week</Text>
         </View>
         <Text style={styles.billingInfo}>Cancel anytime</Text>
       </View>
@@ -166,7 +115,7 @@ export default function PaywallRevenueCat() {
       <TouchableOpacity
         style={[styles.subscribeButton, loading && styles.subscribeButtonDisabled]}
         onPress={handleSubscribe}
-        disabled={loading || !isConfigured}
+        disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
@@ -175,21 +124,9 @@ export default function PaywallRevenueCat() {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.restoreButton}
-        onPress={handleRestore}
-        disabled={restoring}
-      >
-        {restoring ? (
-          <ActivityIndicator color={Colors.primary} />
-        ) : (
-          <Text style={styles.restoreButtonText}>Restore Purchases</Text>
-        )}
-      </TouchableOpacity>
-
       <Text style={styles.disclaimer}>
         By subscribing, you agree to our Terms of Service and Privacy Policy. Your subscription will
-        automatically renew until cancelled. Manage your subscription in your device settings.
+        automatically renew until cancelled. Manage your subscription in Settings.
       </Text>
     </ScrollView>
   );
@@ -199,11 +136,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
   content: {
     padding: 24,
@@ -301,17 +233,6 @@ const styles = StyleSheet.create({
   subscribeButtonText: {
     ...Typography.button,
     color: '#FFFFFF',
-  },
-  restoreButton: {
-    backgroundColor: 'transparent',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  restoreButtonText: {
-    ...Typography.button,
-    color: Colors.primary,
   },
   disclaimer: {
     ...Typography.caption,

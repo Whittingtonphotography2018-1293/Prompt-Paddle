@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
-type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'not_started' | 'inactive' | 'loading';
+type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'not_started' | 'canceled' | 'unpaid' | 'incomplete' | 'loading';
 
 export function useSubscription() {
   const { user } = useAuth();
@@ -27,31 +27,31 @@ export function useSubscription() {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('revenuecat_entitlements')
-        .select('is_active, expires_at')
+      const { data: customerData, error: customerError } = await supabase
+        .from('stripe_customers')
+        .select('customer_id')
         .eq('user_id', user.id)
-        .eq('is_active', true)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error checking subscription:', error);
+      if (customerError || !customerData) {
         setSubscriptionStatus('not_started');
         setLoading(false);
         return;
       }
 
-      if (data) {
-        if (data.expires_at) {
-          const expiresAt = new Date(data.expires_at);
-          const isStillActive = expiresAt > new Date();
-          setSubscriptionStatus(isStillActive ? 'active' : 'inactive');
-        } else {
-          setSubscriptionStatus('active');
-        }
-      } else {
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('stripe_subscriptions')
+        .select('status')
+        .eq('customer_id', customerData.customer_id)
+        .maybeSingle();
+
+      if (subscriptionError || !subscriptionData) {
         setSubscriptionStatus('not_started');
+        setLoading(false);
+        return;
       }
+
+      setSubscriptionStatus(subscriptionData.status as SubscriptionStatus);
     } catch (err) {
       console.error('Error checking subscription:', err);
       setSubscriptionStatus('not_started');

@@ -31,7 +31,8 @@ export default function SettingsScreen() {
   const [preferredName, setPreferredName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const { subscriptionStatus, hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const [canceling, setCanceling] = useState(false);
+  const { subscriptionStatus, hasActiveSubscription, loading: subscriptionLoading, refetchSubscription } = useSubscription();
 
   useEffect(() => {
     if (!user) return;
@@ -120,15 +121,85 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleCancelSubscription = () => {
-    const message = Platform.OS === 'web'
-      ? 'To cancel your subscription, please manage it through your device settings (App Store or Google Play).'
-      : 'To cancel your subscription, go to your device settings and manage subscriptions through the App Store or Google Play Store.';
-
+  const handleCancelSubscription = async () => {
     if (Platform.OS === 'web') {
-      window.alert(message);
+      const confirmed = window.confirm(
+        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.'
+      );
+      if (!confirmed) return;
     } else {
-      Alert.alert('Manage Subscription', message, [{ text: 'OK' }]);
+      Alert.alert(
+        'Cancel Subscription',
+        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.',
+        [
+          { text: 'Keep Subscription', style: 'cancel' },
+          {
+            text: 'Cancel Subscription',
+            style: 'destructive',
+            onPress: () => performCancellation(),
+          },
+        ]
+      );
+      return;
+    }
+
+    await performCancellation();
+  };
+
+  const performCancellation = async () => {
+    if (!user) return;
+    setCanceling(true);
+
+    try {
+      console.log('Invoking stripe-cancel-subscription function...');
+      const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
+        body: {},
+      });
+
+      console.log('Function response:', { data, error });
+
+      if (error) {
+        console.error('Cancel subscription error:', error);
+        throw new Error(error.message || 'Failed to cancel subscription');
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('Subscription cancelled successfully:', data);
+
+      if (Platform.OS === 'web') {
+        window.alert(
+          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.'
+        );
+        refetchSubscription();
+      } else {
+        Alert.alert(
+          'Subscription Canceled',
+          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                refetchSubscription();
+              },
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Cancel subscription error:', error);
+      const errorMessage = error.message || 'Failed to cancel subscription. Please try again.';
+
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${errorMessage}`);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -261,11 +332,12 @@ export default function SettingsScreen() {
 
               {hasActiveSubscription && (
                 <Button
-                  title="Manage Subscription"
+                  title={canceling ? 'Canceling...' : 'Cancel Subscription'}
                   onPress={handleCancelSubscription}
                   variant="outline"
                   size="large"
-                  style={styles.actionButton}
+                  style={styles.dangerButton}
+                  disabled={canceling}
                 />
               )}
             </>

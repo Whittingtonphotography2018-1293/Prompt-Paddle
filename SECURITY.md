@@ -45,12 +45,12 @@ All database tables have Row Level Security enabled with policies that:
 - Ensure users can only access their own data
 - Prevent unauthorized data access or modification
 
-### RevenueCat Integration Security
+### Stripe Integration Security
 
-Subscription and entitlement tables have read-only access for users:
+Payment-related tables have read-only access for users:
 - Modifications only occur via secure webhook handlers
-- Service role is used for all subscription operations
-- RevenueCat handles payment processing through App Store and Google Play
+- Service role is used for all payment operations
+- Soft delete prevents data loss while maintaining security
 
 ## Best Practices
 
