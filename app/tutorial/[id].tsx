@@ -47,18 +47,21 @@ export default function TutorialViewer() {
       completed_at: new Date().toISOString(),
     });
 
-    const { error: rpcError } = await supabase.rpc('increment', {
-      table_name: 'user_progress',
-      column_name: 'tutorials_completed',
-      user_id: user.id,
-    });
+    const { data: currentProgress } = await supabase
+      .from('user_progress')
+      .select('tutorials_completed')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (rpcError) {
-      await supabase
-        .from('user_progress')
-        .update({ tutorials_completed: 1 })
-        .eq('user_id', user.id);
-    }
+    const newCount = (currentProgress?.tutorials_completed || 0) + 1;
+
+    await supabase
+      .from('user_progress')
+      .upsert({
+        user_id: user.id,
+        tutorials_completed: newCount,
+        updated_at: new Date().toISOString(),
+      });
 
     setLoading(false);
     router.back();
