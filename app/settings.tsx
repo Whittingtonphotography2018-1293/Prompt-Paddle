@@ -134,28 +134,17 @@ export default function SettingsScreen() {
             setCanceling(true);
 
             try {
-              const session = await supabase.auth.getSession();
-              const token = session.data.session?.access_token;
-
-              if (!token) {
-                Alert.alert('Error', 'Unable to authenticate. Please try again.');
-                setCanceling(false);
-                return;
-              }
-
-              const apiUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/stripe-cancel-subscription`;
-              const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
+              const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
+                body: {},
               });
 
-              const data = await response.json();
+              if (error) {
+                console.error('Cancel subscription error:', error);
+                throw new Error(error.message || 'Failed to cancel subscription');
+              }
 
-              if (!response.ok) {
-                throw new Error(data.error || 'Failed to cancel subscription');
+              if (data?.error) {
+                throw new Error(data.error);
               }
 
               Alert.alert(
