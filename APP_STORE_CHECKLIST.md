@@ -13,15 +13,21 @@ Use this checklist to track your progress toward App Store submission.
 - [ ] Replace icon.png with final app icon
 
 ### Screenshots
+- [ ] Review screenshot requirements: `SCREENSHOTS_QUICK_START.md`
+- [ ] Use automated capture script: `./capture-screenshots.sh`
+- [ ] Track progress with: `SCREENSHOTS_CHECKLIST.md`
 - [ ] Take screenshots on iPhone 6.7" (1290 x 2796)
 - [ ] Take screenshots on iPhone 6.5" (1242 x 2688)
 - [ ] Take screenshots on iPad Pro 12.9" (2048 x 2732) - if iPad support
-- [ ] Include at least 3 screenshots showing:
+- [ ] Capture all 7 required screenshots:
   - [ ] Welcome/onboarding screen
-  - [ ] Template selection
-  - [ ] Prompt creation wizard
-  - [ ] Generated result
+  - [ ] Template selection (Create tab)
+  - [ ] Prompt creation wizard in action
+  - [ ] Generated result with copy button
   - [ ] Library with saved prompts
+  - [ ] Learn/Tutorial screen
+  - [ ] Platform recommendation screen
+- [ ] Optional: Add device frames using online tools
 - [ ] Optional: Create app preview video (15-30 seconds)
 
 ### Apple Developer Account
@@ -288,6 +294,10 @@ Use this checklist to track your progress toward App Store submission.
 
 - ✅ APP_STORE_METADATA.md - Complete app descriptions and metadata
 - ✅ APP_STORE_SUBMISSION_GUIDE.md - Step-by-step submission process
+- ✅ SCREENSHOTS_QUICK_START.md - Quick guide to capturing screenshots
+- ✅ APP_STORE_SCREENSHOTS_GUIDE.md - Comprehensive screenshot guide
+- ✅ SCREENSHOTS_CHECKLIST.md - Detailed screenshot progress tracker
+- ✅ capture-screenshots.sh - Automated screenshot capture script
 - ✅ PRIVACY_POLICY.md - Privacy policy document
 - ✅ TERMS_OF_SERVICE.md - Terms of service document
 - ✅ app.json - App configuration
