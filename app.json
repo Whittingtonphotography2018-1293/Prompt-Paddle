@@ -4,7 +4,7 @@
     "slug": "prompt-paddle",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/paddle_and_speech_bubble_logo.png",
     "scheme": "promptpaddle",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -25,7 +25,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
+        "foregroundImage": "./assets/images/paddle_and_speech_bubble_logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.promptpaddle.app",
@@ -39,7 +39,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/paddle_and_speech_bubble_logo.png"
     },
     "plugins": [
       "expo-router",
@@ -54,7 +54,7 @@
       ]
     ],
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/paddle_and_speech_bubble_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
