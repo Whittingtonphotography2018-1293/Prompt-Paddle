@@ -7,8 +7,11 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Check } from 'lucide-react-native';
@@ -53,11 +56,19 @@ export default function Paywall() {
     setLoading(true);
 
     try {
+      const priceId =
+        process.env.EXPO_PUBLIC_STRIPE_PRICE_ID ||
+        Constants.expoConfig?.extra?.stripePriceId ||
+        'price_1Sf28eKgn1iCzvzBqk6NkGRF';
+
+      const baseUrl =
+        Platform.OS === 'web' ? window.location.origin : 'https://promptpaddle.app';
+
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
         body: {
-          price_id: process.env.EXPO_PUBLIC_STRIPE_PRICE_ID || 'price_1234567890',
-          success_url: `${window.location.origin}`,
-          cancel_url: `${window.location.origin}/paywall`,
+          price_id: priceId,
+          success_url: `${baseUrl}/subscription-success`,
+          cancel_url: `${baseUrl}/paywall`,
           mode: 'subscription',
         },
       });
@@ -69,7 +80,20 @@ export default function Paywall() {
       }
 
       if (data?.url) {
-        window.location.href = data.url;
+        if (Platform.OS === 'web') {
+          window.location.href = data.url;
+        } else {
+          const result = await WebBrowser.openBrowserAsync(data.url);
+
+          if (result.type === 'cancel') {
+            Alert.alert('Cancelled', 'Subscription process was cancelled');
+          } else {
+            await refetchSubscription();
+            if (hasActiveSubscription) {
+              router.replace('/(tabs)');
+            }
+          }
+        }
       } else {
         Alert.alert('Error', 'Failed to get checkout URL');
       }
