@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -120,55 +121,80 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleCancelSubscription = () => {
-    Alert.alert(
-      'Cancel Subscription',
-      'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.',
-      [
-        { text: 'Keep Subscription', style: 'cancel' },
-        {
-          text: 'Cancel Subscription',
-          style: 'destructive',
-          onPress: async () => {
-            if (!user) return;
-            setCanceling(true);
-
-            try {
-              const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
-                body: {},
-              });
-
-              if (error) {
-                console.error('Cancel subscription error:', error);
-                throw new Error(error.message || 'Failed to cancel subscription');
-              }
-
-              if (data?.error) {
-                throw new Error(data.error);
-              }
-
-              Alert.alert(
-                'Subscription Canceled',
-                'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      refetchSubscription();
-                    },
-                  },
-                ]
-              );
-            } catch (error: any) {
-              console.error('Cancel subscription error:', error);
-              Alert.alert('Error', error.message || 'Failed to cancel subscription. Please try again.');
-            } finally {
-              setCanceling(false);
-            }
+  const handleCancelSubscription = async () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.'
+      );
+      if (!confirmed) return;
+    } else {
+      Alert.alert(
+        'Cancel Subscription',
+        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.',
+        [
+          { text: 'Keep Subscription', style: 'cancel' },
+          {
+            text: 'Cancel Subscription',
+            style: 'destructive',
+            onPress: () => performCancellation(),
           },
-        },
-      ]
-    );
+        ]
+      );
+      return;
+    }
+
+    await performCancellation();
+  };
+
+  const performCancellation = async () => {
+    if (!user) return;
+    setCanceling(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
+        body: {},
+      });
+
+      if (error) {
+        console.error('Cancel subscription error:', error);
+        throw new Error(error.message || 'Failed to cancel subscription');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (Platform.OS === 'web') {
+        window.alert(
+          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.'
+        );
+        refetchSubscription();
+      } else {
+        Alert.alert(
+          'Subscription Canceled',
+          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                refetchSubscription();
+              },
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Cancel subscription error:', error);
+      const errorMessage = error.message || 'Failed to cancel subscription. Please try again.';
+
+      if (Platform.OS === 'web') {
+        window.alert(`Error: ${errorMessage}`);
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setCanceling(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
