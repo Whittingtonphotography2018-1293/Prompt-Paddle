@@ -7,8 +7,6 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,10 +17,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { ArrowLeft, User, Mail, Target, Calendar, FileText, Shield, CreditCard } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Target, Calendar, FileText, Shield } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { Profile } from '@/types/database';
-import { useSubscription } from '@/hooks/useSubscription';
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
@@ -31,8 +28,6 @@ export default function SettingsScreen() {
   const [preferredName, setPreferredName] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [canceling, setCanceling] = useState(false);
-  const { subscriptionStatus, hasActiveSubscription, loading: subscriptionLoading, refetchSubscription } = useSubscription();
 
   useEffect(() => {
     if (!user) return;
@@ -119,88 +114,6 @@ export default function SettingsScreen() {
         },
       ]
     );
-  };
-
-  const handleCancelSubscription = async () => {
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.'
-      );
-      if (!confirmed) return;
-    } else {
-      Alert.alert(
-        'Cancel Subscription',
-        'Are you sure you want to cancel your weekly membership? You will lose access to premium features at the end of your current billing period.',
-        [
-          { text: 'Keep Subscription', style: 'cancel' },
-          {
-            text: 'Cancel Subscription',
-            style: 'destructive',
-            onPress: () => performCancellation(),
-          },
-        ]
-      );
-      return;
-    }
-
-    await performCancellation();
-  };
-
-  const performCancellation = async () => {
-    if (!user) return;
-    setCanceling(true);
-
-    try {
-      console.log('Invoking stripe-cancel-subscription function...');
-      const { data, error } = await supabase.functions.invoke('stripe-cancel-subscription', {
-        body: {},
-      });
-
-      console.log('Function response:', { data, error });
-
-      if (error) {
-        console.error('Cancel subscription error:', error);
-        throw new Error(error.message || 'Failed to cancel subscription');
-      }
-
-      if (data?.error) {
-        console.error('Function returned error:', data.error);
-        throw new Error(data.error);
-      }
-
-      console.log('Subscription cancelled successfully:', data);
-
-      if (Platform.OS === 'web') {
-        window.alert(
-          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.'
-        );
-        refetchSubscription();
-      } else {
-        Alert.alert(
-          'Subscription Canceled',
-          'Your subscription has been canceled. You will still have access to premium features until the end of your current billing period.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                refetchSubscription();
-              },
-            },
-          ]
-        );
-      }
-    } catch (error: any) {
-      console.error('Cancel subscription error:', error);
-      const errorMessage = error.message || 'Failed to cancel subscription. Please try again.';
-
-      if (Platform.OS === 'web') {
-        window.alert(`Error: ${errorMessage}`);
-      } else {
-        Alert.alert('Error', errorMessage);
-      }
-    } finally {
-      setCanceling(false);
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -299,49 +212,6 @@ export default function SettingsScreen() {
             style={styles.saveButton}
             disabled={saving}
           />
-        </Card>
-
-        <Card style={styles.section}>
-          <Text style={styles.sectionTitle}>Subscription</Text>
-          <Text style={styles.sectionDescription}>
-            Manage your membership and billing
-          </Text>
-
-          {subscriptionLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={Colors.primary} />
-              <Text style={styles.loadingText}>Loading subscription...</Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.inputGroup}>
-                <View style={styles.inputLabel}>
-                  <CreditCard size={20} color={Colors.textLight} />
-                  <Text style={styles.inputLabelText}>Status</Text>
-                </View>
-                <View style={styles.readOnlyField}>
-                  <Text style={styles.readOnlyText}>
-                    {hasActiveSubscription
-                      ? subscriptionStatus === 'trialing'
-                        ? 'Trial Period'
-                        : 'Active Membership'
-                      : 'No Active Subscription'}
-                  </Text>
-                </View>
-              </View>
-
-              {hasActiveSubscription && (
-                <Button
-                  title={canceling ? 'Canceling...' : 'Cancel Subscription'}
-                  onPress={handleCancelSubscription}
-                  variant="outline"
-                  size="large"
-                  style={styles.dangerButton}
-                  disabled={canceling}
-                />
-              )}
-            </>
-          )}
         </Card>
 
         <Card style={styles.section}>
@@ -522,16 +392,5 @@ const styles = StyleSheet.create({
   footerText: {
     ...Typography.caption,
     color: Colors.textLighter,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    gap: 12,
-  },
-  loadingText: {
-    ...Typography.body,
-    color: Colors.textLight,
   },
 });
