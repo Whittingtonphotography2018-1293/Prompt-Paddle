@@ -75,52 +75,55 @@ export default function CreateTab() {
         </View>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        contentContainerStyle={styles.categoryContent}
-      >
-        <TouchableOpacity
-          style={[
-            styles.categoryChip,
-            !selectedCategory && styles.categoryChipActive,
-          ]}
-          onPress={() => setSelectedCategory(null)}
+      <View style={styles.categoryContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          contentContainerStyle={styles.categoryContent}
         >
-          <Text
-            style={[
-              styles.categoryText,
-              !selectedCategory && styles.categoryTextActive,
-            ]}
-          >
-            All
-          </Text>
-        </TouchableOpacity>
-        {categories.map((category) => (
           <TouchableOpacity
-            key={category}
             style={[
               styles.categoryChip,
-              selectedCategory === category && styles.categoryChipActive,
+              !selectedCategory && styles.categoryChipActive,
             ]}
-            onPress={() => setSelectedCategory(category)}
+            onPress={() => setSelectedCategory(null)}
           >
             <Text
               style={[
                 styles.categoryText,
-                selectedCategory === category && styles.categoryTextActive,
+                !selectedCategory && styles.categoryTextActive,
               ]}
             >
-              {category}
+              All
             </Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryChip,
+                selectedCategory === category && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              <Text
+                style={[
+                  styles.categoryText,
+                  selectedCategory === category && styles.categoryTextActive,
+                ]}
+              >
+                {category}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        style={styles.templatesScroll}
       >
         {filteredTemplates.map((template) => {
           const IconComponent = ICON_MAP[template.icon] || HelpCircle;
@@ -209,17 +212,22 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
   },
+  categoryContainer: {
+    backgroundColor: Colors.background,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.surfaceGray,
+  },
   categoryScroll: {
     flexGrow: 0,
-    maxHeight: 50,
-    marginBottom: 16,
-    backgroundColor: Colors.background,
-    zIndex: 10,
   },
   categoryContent: {
     paddingHorizontal: 24,
     paddingVertical: 8,
     gap: 8,
+  },
+  templatesScroll: {
+    flex: 1,
   },
   categoryChip: {
     paddingHorizontal: 16,
