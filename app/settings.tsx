@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
+import CustomerCenter from '@/components/CustomerCenter';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/Colors';
@@ -213,6 +214,11 @@ export default function SettingsScreen() {
             disabled={saving}
           />
         </Card>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Subscription</Text>
+          <CustomerCenter />
+        </View>
 
         <Card style={styles.section}>
           <Text style={styles.sectionTitle}>Legal & Privacy</Text>
