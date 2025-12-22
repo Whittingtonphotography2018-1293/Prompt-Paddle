@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Platform,
   Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,6 +16,7 @@ import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Copy, CheckCircle, ExternalLink, Sparkles } from 'lucide-react-native';
 import { AI_PLATFORMS } from '@/data/platforms';
+import * as Clipboard from 'expo-clipboard';
 
 export default function PromptResult() {
   const { prompt, platformId, templateName, category } = useLocalSearchParams();
@@ -27,9 +27,7 @@ export default function PromptResult() {
 
   const handleCopy = async () => {
     try {
-      if (Platform.OS === 'web') {
-        await navigator.clipboard.writeText(prompt as string);
-      }
+      await Clipboard.setStringAsync(prompt as string);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
