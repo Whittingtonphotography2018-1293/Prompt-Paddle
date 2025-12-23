@@ -5,7 +5,7 @@ import Purchases, {
   PurchasesOfferings,
   PurchasesPackage,
   LOG_LEVEL,
-} from '@revenuecat/purchases-expo';
+} from 'react-native-purchases';
 import { REVENUECAT_CONFIG } from '@/constants/RevenueCat';
 import { useAuth } from './AuthContext';
 

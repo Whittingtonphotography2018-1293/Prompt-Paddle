@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PurchasesPackage } from '@revenuecat/purchases-expo';
+import { PurchasesPackage } from 'react-native-purchases';
 import { useRevenueCat } from '@/contexts/RevenueCatContext';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
