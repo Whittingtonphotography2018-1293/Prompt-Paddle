@@ -51,12 +51,6 @@
         {
           "cameraPermission": "Allow Prompt Paddle to access your camera to scan QR codes and capture images for prompt inspiration."
         }
-      ],
-      [
-        "@revenuecat/purchases-expo",
-        {
-          "apiKey": "test_AkeCwmiiQBTBpcZrpPqAhjIgqee"
-        }
       ]
     ],
     "splash": {
